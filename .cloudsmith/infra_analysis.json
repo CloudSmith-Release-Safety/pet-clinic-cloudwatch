@@ -1,0 +1,1064 @@
+{
+  "org_name": "CloudSmith-Release-Safety",
+  "repo_name": "pet-clinic-cloudwatch",
+  "repo_url": "https://github.com/CloudSmith-Release-Safety/pet-clinic-cloudwatch",
+  "infrastructure_providers": [
+    {
+      "provider_id": "synthetics_canary_bucket_code",
+      "resource_type": "S3",
+      "resource_identifier": "aws-synthetics-code-petclinic-${account_id}-${region}",
+      "file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "infrastructure_type": "SDK-Direct",
+      "description": "S3 bucket for storing CloudWatch Synthetics canary code for the Pet Clinic application",
+      "interfaces": [
+        {
+          "interface_type": "storage",
+          "endpoint_pattern": "s3://${bucket_name}/${canary_name}",
+          "operations": ["PutObject", "GetObject"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "created_by_script": true,
+        "used_for": "canary_code_storage"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "synthetics_canary_bucket_results",
+      "resource_type": "S3",
+      "resource_identifier": "cw-syn-results-petclinic-${account_id}-${region}",
+      "file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "infrastructure_type": "SDK-Direct",
+      "description": "S3 bucket for storing CloudWatch Synthetics canary execution results for the Pet Clinic application",
+      "interfaces": [
+        {
+          "interface_type": "storage",
+          "endpoint_pattern": "s3://${bucket_name}",
+          "operations": ["PutObject", "GetObject", "GetBucketLocation"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "created_by_script": true,
+        "used_for": "canary_results_storage"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "synthetics_canary_role",
+      "resource_type": "IAM Role",
+      "resource_identifier": "CloudWatchSyntheticsRole-PetClinic-${account_id}-${region}",
+      "file_path": "scripts/eks/appsignals/canaries/policies/canary_role.json",
+      "infrastructure_type": "SDK-Direct",
+      "description": "IAM role that CloudWatch Synthetics canaries assume to access AWS resources",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "iam.amazonaws.com",
+          "operations": ["AssumeRole"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "trust_relationship": {
+          "service": "lambda.amazonaws.com"
+        },
+        "path": "/service-role/"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "synthetics_canary_policy",
+      "resource_type": "IAM Policy",
+      "resource_identifier": "CloudWatchSyntheticsPolicy-PetClinic-${account_id}-${region}",
+      "file_path": "scripts/eks/appsignals/canaries/policies/canary_policy.json",
+      "infrastructure_type": "SDK-Direct",
+      "description": "IAM policy that grants permissions to CloudWatch Synthetics canaries",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "iam.amazonaws.com",
+          "operations": ["AttachRolePolicy"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "permissions": {
+          "s3": ["PutObject", "GetObject", "GetBucketLocation", "ListAllMyBuckets"],
+          "logs": ["CreateLogStream", "PutLogEvents", "CreateLogGroup"],
+          "xray": ["PutTraceSegments"],
+          "cloudwatch": ["PutMetricData"]
+        },
+        "path": "/service-role/"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "add_visit_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pc-add-visit",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pc-add-visit.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that tests the Pet Clinic add visit functionality",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "create_owners_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pc-create-owners",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pc-create-owners.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that tests the Pet Clinic create owners functionality",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "visit_pet_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pc-visit-pet",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-pet.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that tests the Pet Clinic visit pet functionality",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "visit_vet_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pc-visit-vet",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-vet.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that tests the Pet Clinic visit vet functionality",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "visit_insurances_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pc-visit-insurances",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-insurances.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that tests the Pet Clinic visit insurances functionality",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "visit_billings_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pc-visit-billings",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-billings.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that tests the Pet Clinic visit billings functionality",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "pet_clinic_traffic_canary",
+      "resource_type": "CloudWatch Synthetics",
+      "resource_identifier": "pet-clinic-traffic",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pet-clinic-traffic.js",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch Synthetics canary that generates general traffic for the Pet Clinic application",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "synthetics.${region}.amazonaws.com",
+          "operations": ["CreateCanary", "StartCanary", "StopCanary", "DeleteCanary", "GetCanary"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "runtime_version": "syn-nodejs-puppeteer-6.2",
+        "schedule_expression": "rate(1 minute)",
+        "active_tracing": true,
+        "s3_artifact_location": "s3://cw-syn-results-petclinic-${account_id}-${region}"
+      },
+      "environment_variables": ["URL=${NGINX_ENDPOINT}"],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "application_signals_service",
+      "resource_type": "Application Signals",
+      "resource_identifier": "application-signals",
+      "file_path": "scripts/eks/appsignals/create-slo.sh",
+      "infrastructure_type": "SDK-Direct",
+      "description": "AWS Application Signals service used for monitoring the Pet Clinic application",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "application-signals.${region}.api.aws",
+          "operations": ["StartDiscovery", "ListServices", "CreateServiceLevelObjective", "DeleteServiceLevelObjective"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "custom_service_model": "slo/application-signals-2024-04-15.normal.json",
+        "service_name": "pet-clinic-frontend-java"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "getowner_availability_slo",
+      "resource_type": "Application Signals SLO",
+      "resource_identifier": "Availability for Searching an Owner",
+      "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwner99Availability.json",
+      "infrastructure_type": "SDK-Direct",
+      "description": "Service Level Objective for the availability of the GET /api/customer/owners operation",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "application-signals.${region}.api.aws",
+          "operations": ["CreateServiceLevelObjective", "DeleteServiceLevelObjective"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "operation_name": "GET /api/customer/owners",
+        "metric_type": "AVAILABILITY",
+        "metric_threshold": 99.0,
+        "comparison_operator": "GreaterThan",
+        "attainment_goal": 99.9,
+        "warning_threshold": 60.0
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "getowner_latency_slo",
+      "resource_type": "Application Signals SLO",
+      "resource_identifier": "Latency for Searching an Owner",
+      "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwnerP99Latency.json",
+      "infrastructure_type": "SDK-Direct",
+      "description": "Service Level Objective for the P99 latency of the GET /api/customer/owners operation",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "application-signals.${region}.api.aws",
+          "operations": ["CreateServiceLevelObjective", "DeleteServiceLevelObjective"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "operation_name": "GET /api/customer/owners",
+        "metric_type": "LATENCY",
+        "metric_threshold": 500,
+        "comparison_operator": "LessThan",
+        "attainment_goal": 99.0,
+        "warning_threshold": 60.0
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "postowner_availability_slo",
+      "resource_type": "Application Signals SLO",
+      "resource_identifier": "Availability for Creating an Owner",
+      "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwner99Availability.json",
+      "infrastructure_type": "SDK-Direct",
+      "description": "Service Level Objective for the availability of the POST /api/customer/owners operation",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "application-signals.${region}.api.aws",
+          "operations": ["CreateServiceLevelObjective", "DeleteServiceLevelObjective"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "operation_name": "POST /api/customer/owners",
+        "metric_type": "AVAILABILITY",
+        "metric_threshold": 99.0,
+        "comparison_operator": "GreaterThan",
+        "attainment_goal": 99.9,
+        "warning_threshold": 60.0
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "postowner_latency_slo",
+      "resource_type": "Application Signals SLO",
+      "resource_identifier": "Latency for Creating an Owner",
+      "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwnerP99Latency.json",
+      "infrastructure_type": "SDK-Direct",
+      "description": "Service Level Objective for the P99 latency of the POST /api/customer/owners operation",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "application-signals.${region}.api.aws",
+          "operations": ["CreateServiceLevelObjective", "DeleteServiceLevelObjective"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "operation_name": "POST /api/customer/owners",
+        "metric_type": "LATENCY",
+        "metric_threshold": 500,
+        "comparison_operator": "LessThan",
+        "attainment_goal": 99.0,
+        "warning_threshold": 60.0
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "cloudwatch_observability_addon",
+      "resource_type": "EKS Addon",
+      "resource_identifier": "amazon-cloudwatch-observability",
+      "file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "infrastructure_type": "SDK-Direct",
+      "description": "EKS addon for CloudWatch observability features including Application Signals",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "eks.${region}.amazonaws.com",
+          "operations": ["DeleteAddon"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "cluster_name": "${CLUSTER_NAME}"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "cloudwatch_agent_sa",
+      "resource_type": "IAM ServiceAccount",
+      "resource_identifier": "cloudwatch-agent",
+      "file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "infrastructure_type": "SDK-Direct",
+      "description": "Kubernetes service account with IAM permissions for CloudWatch agent",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "eks.${region}.amazonaws.com",
+          "operations": ["DeleteIAMServiceAccount"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "cluster_name": "${CLUSTER_NAME}",
+        "namespace": "amazon-cloudwatch"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    },
+    {
+      "provider_id": "application_signals_log_group",
+      "resource_type": "CloudWatch Logs",
+      "resource_identifier": "/aws/application-signals/data",
+      "file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "infrastructure_type": "SDK-Direct",
+      "description": "CloudWatch log group where Application Signals data is stored",
+      "interfaces": [
+        {
+          "interface_type": "api",
+          "endpoint_pattern": "logs.${region}.amazonaws.com",
+          "operations": ["DeleteLogGroup"],
+          "authentication": "IAM"
+        }
+      ],
+      "configuration": {
+        "log_group_name": "/aws/application-signals/data"
+      },
+      "environment_variables": [],
+      "provider_type": "internal"
+    }
+  ],
+  "application_consumers": [
+    {
+      "consumer_id": "canaries_creation_script",
+      "component_type": "script",
+      "file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "language": "Bash",
+      "description": "Shell script that creates and manages CloudWatch Synthetics canaries for the Pet Clinic application",
+      "resource_discovery": {
+        "method": "environment variables and script parameters",
+        "environment_variables": ["ACCOUNT_ID", "REGION", "OPERATION"]
+      },
+      "authentication": {
+        "method": "AWS CLI credentials"
+      },
+      "package_dependencies": [],
+      "internal_dependencies": [
+        {
+          "resource_type": "S3",
+          "resource_name": "aws-synthetics-code-petclinic-${account_id}-${region}",
+          "file_path": "scripts/eks/appsignals/create-canaries.sh"
+        },
+        {
+          "resource_type": "S3",
+          "resource_name": "cw-syn-results-petclinic-${account_id}-${region}",
+          "file_path": "scripts/eks/appsignals/create-canaries.sh"
+        },
+        {
+          "resource_type": "IAM Role",
+          "resource_name": "CloudWatchSyntheticsRole-PetClinic-${account_id}-${region}",
+          "file_path": "scripts/eks/appsignals/canaries/policies/canary_role.json"
+        },
+        {
+          "resource_type": "IAM Policy",
+          "resource_name": "CloudWatchSyntheticsPolicy-PetClinic-${account_id}-${region}",
+          "file_path": "scripts/eks/appsignals/canaries/policies/canary_policy.json"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pc-add-visit",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pc-add-visit.js"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pc-create-owners",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pc-create-owners.js"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pc-visit-pet",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-pet.js"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pc-visit-vet",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-vet.js"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pet-clinic-traffic",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pet-clinic-traffic.js"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pc-visit-insurances",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-insurances.js"
+        },
+        {
+          "resource_type": "CloudWatch Synthetics",
+          "resource_name": "pc-visit-billings",
+          "file_path": "scripts/eks/appsignals/canaries/scripts/pc-visit-billings.js"
+        }
+      ]
+    },
+    {
+      "consumer_id": "slo_creation_script",
+      "component_type": "script",
+      "file_path": "scripts/eks/appsignals/create-slo.sh",
+      "language": "Bash",
+      "description": "Shell script that creates Service Level Objectives for the Pet Clinic application using Application Signals",
+      "resource_discovery": {
+        "method": "script parameters",
+        "environment_variables": ["CLUSTER_NAME", "REGION"]
+      },
+      "authentication": {
+        "method": "AWS CLI credentials"
+      },
+      "package_dependencies": [],
+      "internal_dependencies": [
+        {
+          "resource_type": "Application Signals",
+          "resource_name": "application-signals",
+          "file_path": "scripts/eks/appsignals/create-slo.sh"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Availability for Searching an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwner99Availability.json"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Latency for Searching an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwnerP99Latency.json"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Availability for Creating an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwner99Availability.json"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Latency for Creating an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwnerP99Latency.json"
+        }
+      ]
+    },
+    {
+      "consumer_id": "slo_cleanup_script",
+      "component_type": "script",
+      "file_path": "scripts/eks/appsignals/cleanup-slo.sh",
+      "language": "Bash",
+      "description": "Shell script that deletes Service Level Objectives for the Pet Clinic application",
+      "resource_discovery": {
+        "method": "script parameters",
+        "environment_variables": ["REGION"]
+      },
+      "authentication": {
+        "method": "AWS CLI credentials"
+      },
+      "package_dependencies": [],
+      "internal_dependencies": [
+        {
+          "resource_type": "Application Signals",
+          "resource_name": "application-signals",
+          "file_path": "scripts/eks/appsignals/create-slo.sh"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Availability for Searching an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwner99Availability.json"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Latency for Searching an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwnerP99Latency.json"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Availability for Creating an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwner99Availability.json"
+        },
+        {
+          "resource_type": "Application Signals SLO",
+          "resource_name": "Latency for Creating an Owner",
+          "file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwnerP99Latency.json"
+        }
+      ]
+    },
+    {
+      "consumer_id": "app_signals_cleanup_script",
+      "component_type": "script",
+      "file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "language": "Bash",
+      "description": "Shell script that cleans up Application Signals resources for the Pet Clinic application",
+      "resource_discovery": {
+        "method": "script parameters",
+        "environment_variables": ["CLUSTER_NAME", "REGION", "NAMESPACE"]
+      },
+      "authentication": {
+        "method": "AWS CLI credentials"
+      },
+      "package_dependencies": [],
+      "internal_dependencies": [
+        {
+          "resource_type": "EKS Addon",
+          "resource_name": "amazon-cloudwatch-observability",
+          "file_path": "scripts/eks/appsignals/clean-app-signals.sh"
+        },
+        {
+          "resource_type": "IAM ServiceAccount",
+          "resource_name": "cloudwatch-agent",
+          "file_path": "scripts/eks/appsignals/clean-app-signals.sh"
+        },
+        {
+          "resource_type": "CloudWatch Logs",
+          "resource_name": "/aws/application-signals/data",
+          "file_path": "scripts/eks/appsignals/clean-app-signals.sh"
+        }
+      ]
+    },
+    {
+      "consumer_id": "canary_script_pet_clinic_traffic",
+      "component_type": "function",
+      "file_path": "scripts/eks/appsignals/canaries/scripts/pet-clinic-traffic.js",
+      "language": "JavaScript",
+      "description": "CloudWatch Synthetics canary script that generates traffic to the Pet Clinic application",
+      "resource_discovery": {
+        "method": "environment variables",
+        "environment_variables": ["URL"]
+      },
+      "authentication": {
+        "method": "IAM role"
+      },
+      "sdk_usage": {
+        "sdk_type": "Synthetics",
+        "clients": ["SyntheticsLogger"]
+      },
+      "package_dependencies": ["Synthetics", "SyntheticsLogger"],
+      "internal_dependencies": []
+    },
+    {
+      "consumer_id": "deploy_canaries_workflow",
+      "component_type": "workflow",
+      "file_path": ".github/workflows/deploy-canaries.yml",
+      "language": "YAML",
+      "description": "GitHub Actions workflow that deploys CloudWatch Synthetics canaries for the Pet Clinic application",
+      "resource_discovery": {
+        "method": "environment variables",
+        "environment_variables": ["AWS_REGION", "TFSTATE_REGION", "TF_VAR_cluster_name"]
+      },
+      "authentication": {
+        "method": "OIDC role assumption",
+        "role_references": ["${{ secrets.AWS_ROLE_TO_ASSUME }}"]
+      },
+      "package_dependencies": [],
+      "internal_dependencies": []
+    }
+  ],
+  "connections": [
+    {
+      "connection_id": "canaries_script_creates_s3_code_bucket",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "synthetics_canary_bucket_code",
+      "provider_resource_type": "S3",
+      "operation": "CreateBucket",
+      "access_type": "admin",
+      "description": "Creates S3 bucket for storing canary code",
+      "code_snippet": "aws s3 mb s3://$CODE_BUCKET --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "configuration_source": "environment variable",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_creates_s3_results_bucket",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "synthetics_canary_bucket_results",
+      "provider_resource_type": "S3",
+      "operation": "CreateBucket",
+      "access_type": "admin",
+      "description": "Creates S3 bucket for storing canary execution results",
+      "code_snippet": "aws s3 mb s3://$ARTIFACT_BUCKET --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "configuration_source": "environment variable",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_creates_iam_role",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "synthetics_canary_role",
+      "provider_resource_type": "IAM Role",
+      "operation": "CreateRole",
+      "access_type": "admin",
+      "description": "Creates IAM role for CloudWatch Synthetics canaries",
+      "code_snippet": "aws iam create-role --path $ROLE_PATH --role-name $ROLE_NAME --assume-role-policy-document file://canaries/policies/canary_role.json --no-cli-pager",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/canaries/policies/canary_role.json",
+      "configuration_source": "file path",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_creates_iam_policy",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "synthetics_canary_policy",
+      "provider_resource_type": "IAM Policy",
+      "operation": "CreatePolicy",
+      "access_type": "admin",
+      "description": "Creates IAM policy for CloudWatch Synthetics canaries",
+      "code_snippet": "aws iam create-policy --path $ROLE_PATH --policy-name $POLICY_NAME --policy-document file://canaries/policies/canary_policy.json --no-cli-pager",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/canaries/policies/canary_policy.json",
+      "configuration_source": "file path",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_attaches_policy_to_role",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "synthetics_canary_policy",
+      "provider_resource_type": "IAM Policy",
+      "operation": "AttachRolePolicy",
+      "access_type": "admin",
+      "description": "Attaches IAM policy to role for CloudWatch Synthetics canaries",
+      "code_snippet": "aws iam attach-role-policy --role-name $ROLE_NAME --policy-arn $POLICY_ARN",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/canaries/policies/canary_policy.json",
+      "configuration_source": "environment variable",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_uploads_to_s3",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "synthetics_canary_bucket_code",
+      "provider_resource_type": "S3",
+      "operation": "PutObject",
+      "access_type": "write",
+      "description": "Uploads canary script to S3 bucket",
+      "code_snippet": "aws s3api put-object --bucket $CODE_BUCKET --key $canary_name --body \"$canary_name.zip\" | jq",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "configuration_source": "environment variable",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_creates_traffic_canary",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "pet_clinic_traffic_canary",
+      "provider_resource_type": "CloudWatch Synthetics",
+      "operation": "CreateCanary",
+      "access_type": "admin",
+      "description": "Creates the pet-clinic-traffic CloudWatch Synthetics canary",
+      "code_snippet": "aws synthetics create-canary --name $canary_name --artifact-s3-location \"s3://$ARTIFACT_BUCKET\" --code Handler=\"$canary_name.handler\",S3Bucket=\"$CODE_BUCKET\",S3Key=\"$canary_name\" --execution-role-arn $canary_execution_role_arn --runtime-version \"syn-nodejs-puppeteer-6.2\" --schedule Expression=\"rate(1 minute)\" --run-config ActiveTracing=true,EnvironmentVariables={URL=$ENDPOINT} --region $REGION --no-cli-pager",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/canaries/scripts/pet-clinic-traffic.js",
+      "configuration_source": "script parameters and environment variables",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "canaries_script_starts_canaries",
+      "consumer_id": "canaries_creation_script",
+      "provider_id": "pet_clinic_traffic_canary",
+      "provider_resource_type": "CloudWatch Synthetics",
+      "operation": "StartCanary",
+      "access_type": "admin",
+      "description": "Starts the CloudWatch Synthetics canaries",
+      "code_snippet": "aws synthetics start-canary --name $canary_name --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "target_file_path": "scripts/eks/appsignals/canaries/scripts/pet-clinic-traffic.js",
+      "configuration_source": "script parameter",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_script_start_discovery",
+      "consumer_id": "slo_creation_script",
+      "provider_id": "application_signals_service",
+      "provider_resource_type": "Application Signals",
+      "operation": "StartDiscovery",
+      "access_type": "admin",
+      "description": "Enables topology discovery for Application Signals",
+      "code_snippet": "aws application-signals start-discovery --region $REGION --endpoint $ENDPOINT",
+      "source_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "configuration_source": "script parameter",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_script_list_services",
+      "consumer_id": "slo_creation_script",
+      "provider_id": "application_signals_service",
+      "provider_resource_type": "Application Signals",
+      "operation": "ListServices",
+      "access_type": "read",
+      "description": "Lists services monitored by Application Signals",
+      "code_snippet": "SERVICE_KEY_ATTRIBUTES=$(aws application-signals list-services --endpoint $ENDPOINT --region $REGION --cli-input-json \"$LIST_SERVICES_REQUEST_WITH_CORRECT_INPUT\" --output json --query \"(ServiceSummaries[?KeyAttributes.Name=='$SERVICE_NAME'].KeyAttributes)[0]\")",
+      "source_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "configuration_source": "script parameter",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_script_create_getowner_availability_slo",
+      "consumer_id": "slo_creation_script",
+      "provider_id": "getowner_availability_slo",
+      "provider_resource_type": "Application Signals SLO",
+      "operation": "CreateServiceLevelObjective",
+      "access_type": "admin",
+      "description": "Creates SLO for GET Owner operation availability",
+      "code_snippet": "aws application-signals create-service-level-objective --endpoint $ENDPOINT --cli-input-json \"$CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_1\" --no-cli-pager --region \"$REGION\"",
+      "source_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwner99Availability.json",
+      "configuration_source": "file path",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_script_create_getowner_latency_slo",
+      "consumer_id": "slo_creation_script",
+      "provider_id": "getowner_latency_slo",
+      "provider_resource_type": "Application Signals SLO",
+      "operation": "CreateServiceLevelObjective",
+      "access_type": "admin",
+      "description": "Creates SLO for GET Owner operation latency",
+      "code_snippet": "aws application-signals create-service-level-objective --endpoint $ENDPOINT --cli-input-json \"$CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_2\" --no-cli-pager --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/getOwnerP99Latency.json",
+      "configuration_source": "file path",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_script_create_postowner_availability_slo",
+      "consumer_id": "slo_creation_script",
+      "provider_id": "postowner_availability_slo",
+      "provider_resource_type": "Application Signals SLO",
+      "operation": "CreateServiceLevelObjective",
+      "access_type": "admin",
+      "description": "Creates SLO for POST Owner operation availability",
+      "code_snippet": "aws application-signals create-service-level-objective --endpoint $ENDPOINT --cli-input-json \"$CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_3\" --no-cli-pager --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwner99Availability.json",
+      "configuration_source": "file path",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_script_create_postowner_latency_slo",
+      "consumer_id": "slo_creation_script",
+      "provider_id": "postowner_latency_slo",
+      "provider_resource_type": "Application Signals SLO",
+      "operation": "CreateServiceLevelObjective",
+      "access_type": "admin",
+      "description": "Creates SLO for POST Owner operation latency",
+      "code_snippet": "aws application-signals create-service-level-objective --endpoint $ENDPOINT --cli-input-json \"$CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_4\" --no-cli-pager --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/slo/inputRequest/CreateServiceLevelObjective/postOwnerP99Latency.json",
+      "configuration_source": "file path",
+      "criticality": "high",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "slo_cleanup_delete_slos",
+      "consumer_id": "slo_cleanup_script",
+      "provider_id": "getowner_availability_slo",
+      "provider_resource_type": "Application Signals SLO",
+      "operation": "DeleteServiceLevelObjective",
+      "access_type": "admin",
+      "description": "Deletes all Service Level Objectives",
+      "code_snippet": "aws application-signals delete-service-level-objective --cli-input-json file://slo/inputRequest/DeleteServiceLevelObjective/deleteSlo1.json --region $REGION --endpoint $ENDPOINT --no-cli-pager",
+      "source_file_path": "scripts/eks/appsignals/cleanup-slo.sh",
+      "target_file_path": "scripts/eks/appsignals/slo/inputRequest/DeleteServiceLevelObjective/deleteSlo1.json",
+      "configuration_source": "file path",
+      "criticality": "medium",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "app_signals_cleanup_delete_addon",
+      "consumer_id": "app_signals_cleanup_script",
+      "provider_id": "cloudwatch_observability_addon",
+      "provider_resource_type": "EKS Addon",
+      "operation": "DeleteAddon",
+      "access_type": "admin",
+      "description": "Deletes the CloudWatch observability EKS addon",
+      "code_snippet": "aws eks delete-addon --cluster-name $CLUSTER_NAME --addon-name amazon-cloudwatch-observability --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "target_file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "configuration_source": "script parameter",
+      "criticality": "medium",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "app_signals_cleanup_delete_service_account",
+      "consumer_id": "app_signals_cleanup_script",
+      "provider_id": "cloudwatch_agent_sa",
+      "provider_resource_type": "IAM ServiceAccount",
+      "operation": "DeleteIAMServiceAccount",
+      "access_type": "admin",
+      "description": "Deletes the CloudWatch agent IAM service account",
+      "code_snippet": "eksctl delete iamserviceaccount --cluster $CLUSTER_NAME --region $REGION --name cloudwatch-agent --namespace amazon-cloudwatch",
+      "source_file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "target_file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "configuration_source": "script parameter",
+      "criticality": "medium",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "app_signals_cleanup_delete_log_group",
+      "consumer_id": "app_signals_cleanup_script",
+      "provider_id": "application_signals_log_group",
+      "provider_resource_type": "CloudWatch Logs",
+      "operation": "DeleteLogGroup",
+      "access_type": "admin",
+      "description": "Deletes the Application Signals CloudWatch log group",
+      "code_snippet": "aws logs delete-log-group --log-group-name '/aws/application-signals/data' --region $REGION",
+      "source_file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "target_file_path": "scripts/eks/appsignals/clean-app-signals.sh",
+      "configuration_source": "hardcoded",
+      "criticality": "medium",
+      "connection_type": "direct",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "github_workflow_deploy_canaries",
+      "consumer_id": "deploy_canaries_workflow",
+      "provider_id": "pet_clinic_traffic_canary",
+      "provider_resource_type": "CloudWatch Synthetics",
+      "operation": "CreateCanary",
+      "access_type": "admin",
+      "description": "GitHub Actions workflow creates CloudWatch Synthetics canaries",
+      "code_snippet": "./create-canaries.sh ${{ env.AWS_REGION }} create $endpoint",
+      "source_file_path": ".github/workflows/deploy-canaries.yml",
+      "target_file_path": "scripts/eks/appsignals/create-canaries.sh",
+      "configuration_source": "environment variable",
+      "criticality": "high",
+      "connection_type": "indirect",
+      "cross_repo": false
+    },
+    {
+      "connection_id": "github_workflow_create_slo",
+      "consumer_id": "deploy_canaries_workflow",
+      "provider_id": "application_signals_service",
+      "provider_resource_type": "Application Signals",
+      "operation": "CreateServiceLevelObjective",
+      "access_type": "admin",
+      "description": "GitHub Actions workflow creates Service Level Objectives",
+      "code_snippet": "./create-slo.sh ${{ env.TF_VAR_cluster_name }} ${{ env.AWS_REGION }}",
+      "source_file_path": ".github/workflows/deploy-canaries.yml",
+      "target_file_path": "scripts/eks/appsignals/create-slo.sh",
+      "configuration_source": "environment variable",
+      "criticality": "high",
+      "connection_type": "indirect",
+      "cross_repo": false
+    }
+  ],
+  "architecture": {
+    "application_type": "microservice",
+    "infrastructure_pattern": "container-based",
+    "deployment_approach": "CI/CD with GitHub Actions",
+    "configuration_management": "Shell scripts with environment variables",
+    "critical_paths": [
+      {
+        "path_name": "canary_creation_and_monitoring",
+        "description": "End-to-end flow from canary creation to monitoring via CloudWatch Synthetics",
+        "involved_components": [
+          "canaries_creation_script",
+          "synthetics_canary_bucket_code",
+          "synthetics_canary_bucket_results",
+          "synthetics_canary_role",
+          "synthetics_canary_policy",
+          "pet_clinic_traffic_canary"
+        ]
+      },
+      {
+        "path_name": "slo_creation_and_monitoring",
+        "description": "End-to-end flow from SLO creation to monitoring via Application Signals",
+        "involved_components": [
+          "slo_creation_script",
+          "application_signals_service",
+          "getowner_availability_slo",
+          "getowner_latency_slo",
+          "postowner_availability_slo",
+          "postowner_latency_slo"
+        ]
+      },
+      {
+        "path_name": "cloudwatch_observability",
+        "description": "EKS integration with CloudWatch for observability",
+        "involved_components": [
+          "cloudwatch_observability_addon",
+          "cloudwatch_agent_sa",
+          "application_signals_log_group"
+        ]
+      }
+    ],
+    "security_model": {
+      "authentication": "IAM roles with least privilege permissions",
+      "authorization": "Role-based policies",
+      "data_protection": "Secure service communications"
+    },
+    "cross_repo_dependencies": {
+      "provides_to": [
+        {"repository": "pet-clinic-app", "resources": ["application_signals_service", "pet_clinic_traffic_canary"]}
+      ],
+      "consumes_from": [
+        {"repository": "pet-clinic-app", "resources": ["EKS cluster"]}
+      ],
+      "shared_infrastructure": true
+    }
+  }
+}
