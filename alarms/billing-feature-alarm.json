@@ -1,0 +1,20 @@
+{
+  "AlarmName": "BillingFeatureFlagUsage",
+  "AlarmDescription": "Monitors billing feature flag usage - REMOVE when flag is removed",
+  "MetricName": "FeatureFlagEnabled",
+  "Namespace": "PetClinic/BillingFeature", 
+  "Statistic": "Sum",
+  "Dimensions": [
+    {
+      "Name": "FeatureFlag",
+      "Value": "ENABLE_BILLING_STATUS_FEATURE"
+    }
+  ],
+  "Period": 300,
+  "EvaluationPeriods": 2,
+  "Threshold": 0,
+  "ComparisonOperator": "LessThanThreshold",
+  "AlarmActions": [
+    "arn:aws:sns:us-east-1:123456789012:billing-feature-alerts"
+  ]
+}
