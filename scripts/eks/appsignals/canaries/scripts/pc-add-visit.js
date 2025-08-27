@@ -2,8 +2,11 @@ const synthetics = require('Synthetics');
 const log = require('SyntheticsLogger');
 const syntheticsConfiguration = synthetics.getConfiguration();
 
+// REMOVED: Feature flag conditional code - always use new visit flow
 const flowBuilderBlueprint = async function () {
-    let url = process.env.URL + "/#!/owners/details/1";
+    // Feature flag removed - always use new visit flow
+    let url = process.env.URL + "/#!/owners/details/1/visits/new";
+    log.info('Using new visit flow - ENABLE_NEW_VISIT_FLOW feature flag removed');
 
     syntheticsConfiguration.setConfig({
         includeRequestHeaders: true, // Enable if headers should be displayed in HAR
