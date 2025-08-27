@@ -2,8 +2,20 @@ const synthetics = require('Synthetics');
 const log = require('SyntheticsLogger');
 const syntheticsConfiguration = synthetics.getConfiguration();
 
+// FEATURE FLAG CONDITIONAL CODE - Remove when flag is disabled
+const ENABLE_NEW_VISIT_FLOW = process.env.ENABLE_NEW_VISIT_FLOW || 'true';
+
 const flowBuilderBlueprint = async function () {
     let url = process.env.URL + "/#!/owners/details/1";
+    
+    // Conditional UI rendering based on feature flag
+    if (ENABLE_NEW_VISIT_FLOW === 'true') {
+        url = process.env.URL + "/#!/owners/details/1/visits/new"; // New visit flow
+        log.info('Using new visit flow with feature flag enabled');
+    } else {
+        url = process.env.URL + "/#!/owners/details/1"; // Legacy flow
+        log.info('Using legacy visit flow - feature flag disabled');
+    }
 
     syntheticsConfiguration.setConfig({
         includeRequestHeaders: true, // Enable if headers should be displayed in HAR
